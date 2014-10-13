@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Polygon generation</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+</head>
+<body>
+<div>
+Number of vertices:<input type="text" id="txtNVertices" value="9"/>
+Number of circles:<input type="text" id="txtNCircles" value="4"/>
+<input type="button" id="btnDraw" value="Draw" onclick="draw()"/>
+<input type="button" id="btnAutoDraw" value="AutoDraw" onclick="autodraw()"/>
+<input type="button" id="btnStop" value="Stop" onclick="stopdraw()"/>
+</div>
+<hr>
+<div>Exterior angle:<label id="lblExangle"></label></div>
+<div>Polygon:<label id="lblPolygon"></label></div>
+<div id="divSvg">
+<svg viewBox="0 0 500 500">
+<!-- polygon -->
+<path id="pathPolygon" stroke="grey" stroke-width="1" fill="none"/>
+<!-- start point -->
+<circle fill="deeppink" cx="200" cy="200" r="2" name="startpoint"></circle>
+<text style="stroke: #333333; stroke-width: 1; font-family: Arial; font-size: 10px" x="200" y="200">start</text>
+<!-- fix side -->
+<path stroke="deeppink" stroke-width="1" fill="none" d="M 200 200 L 300 200 Z"/>
+</svg>
+</div>
+</body>
+<script type="text/javascript">
+window.onload = function(){
+	draw();
+}
+var isrun = false;
+var isstop = false;
+function stopdraw(){
+	isstop = true;
+}
+function autodraw(obj){
+	if(isrun){
+		console.log("running already!");
+		return false;
+	}
+	
+	var vertices= document.getElementById("txtNVertices").value;
+	var txtCircles= document.getElementById("txtNCircles");
+	isstop = false;
+	if(vertices > 0){
+		isrun = true;
+		console.log("autodraw!");
+		txtCircles.value = 1;
+		drawnext();
+	}
+}
+function drawnext(){
+	if(isstop) {
+		isrun = false;
+		console.log("stop!");
+		return false;
+	}
+	var vertices= document.getElementById("txtNVertices").value;
+	var txtCircles= document.getElementById("txtNCircles");
+	var c = parseInt(txtCircles.value);
+	if(txtCircles.value < vertices - 1){
+		txtCircles.value = c + 1;
+		draw();
+		clearTimeout(drawnext);
+		setTimeout(drawnext,1000);
+	} else {
+		isrun = false;
+		console.log("end!");
+	}
+	return false;
+}
+function draw(obj){
+	var vertices= document.getElementById("txtNVertices").value;
+	var circles= document.getElementById("txtNCircles").value;
+	var lblExangle= document.getElementById("lblExangle");
+	var svgpath = document.getElementById("pathPolygon");
+	
+	// Exterior angle
+	var exang = -1 * 360 * circles / vertices;
+	var exrad = exang * Math.PI / 180;
+	var cos = Math.cos(exrad);
+	var sin = Math.sin(exrad);
+	
+	// side length
+	var len = 100;
+	
+	lblPolygon.innerText = " draw vertices=" + vertices + " circles=" + circles;
+	lblExangle.innerText = exang;
+	
+	var radian = [];
+	var X = [];
+	var Y = [];
+	
+	// start point
+	radian[0]=undefined;
+	X[0]=200;
+	Y[0]=200;
+	
+	// start vertice
+	radian[1]=0;
+	X[1]=X[0] + len;
+	Y[1]=Y[0];
+	
+	// second vertice
+	for(var i=2; i <= vertices; i++){
+		radian[i]= radian[i-1] + exrad;
+		X[i]=X[i-1] + len * (Math.cos(radian[i-1])*cos - Math.sin(radian[i-1])*sin);
+		Y[i]=Y[i-1] - len * (Math.sin(radian[i-1])*cos + Math.cos(radian[i-1])*sin);
+	}
+	
+	// set path tag d
+	var svgpathd = "M " + X[0] + " " + Y[0];
+	for(var j=1; j<=vertices; j++){
+		svgpathd += " L " + X[j] + " " + Y[j]; 
+	}
+	svgpathd += " Z";
+	svgpath.setAttribute("d",svgpathd);
+}
+</script>
+</html>
